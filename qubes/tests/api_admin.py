@@ -2857,6 +2857,7 @@ running and private volume snapshots are disabled. Backup will fail!\n'
         self.assertIsNone(value)
         self.assertEqual(self.vm.volumes.mock_calls,
             [unittest.mock.call.keys(),
+            ('__getitem__', ('private',), {}),
             ('__getitem__', ('private',), {})])
         self.assertEqual(self.vm.volumes['private'].revisions_to_keep, 2)
         self.app.save.assert_called_once_with()
