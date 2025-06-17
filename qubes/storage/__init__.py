@@ -39,6 +39,8 @@ import qubes.exc
 import qubes.utils
 
 STORAGE_ENTRY_POINT = 'qubes.storage'
+VOLUME_STATE_DIR = '/var/run/qubes/'
+VOLUME_STATE_PREFIX = 'volume-running-'
 _am_root = os.getuid() == 0
 
 BYTES_TO_ZERO = 1 << 16
@@ -493,6 +495,16 @@ class Volume:
                 not self.snap_on_start and
                 self.save_on_stop)
 
+    @property
+    def state_file(self) -> str:
+        return os.path.join(
+            VOLUME_STATE_DIR,
+            f"{self.pool.name}__{self.vid}".replace(
+                '-', '--').replace('/', '-'))
+
+    def is_running(self) -> bool:
+        return os.path.exists(self.state_file)
+
 
 class Storage:
     ''' Class for handling VM virtual disks.
@@ -757,6 +769,9 @@ class Storage:
             (vol.start_encrypted(vol.encrypted_volume_path(self.vm.name, name))
              if vol.ephemeral else vol.start())
             for name, vol in self.vm.volumes.items())
+        for vol in self.vm.volumes.values():
+            with open(vol.state_file, 'w', encoding='ascii'):
+                pass
 
     async def stop(self):
         ''' Execute the stop method on each volume '''
@@ -765,6 +780,9 @@ class Storage:
             (vol.stop_encrypted(vol.encrypted_volume_path(self.vm.name, name))
              if vol.ephemeral else vol.stop())
             for name, vol in self.vm.volumes.items())
+        for vol in self.vm.volumes.values():
+            if os.path.exists(vol.state_file):
+                os.unlink(vol.state_file)
 
     def unused_frontend(self):
         ''' Find an unused device name '''
