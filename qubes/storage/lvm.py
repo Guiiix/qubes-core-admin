@@ -672,7 +672,10 @@ class ThinVolume(qubes.storage.Volume):
         try:
             if self.snap_on_start or self.save_on_stop:
                 if not self.save_on_stop or not self.is_dirty():
-                    await self._snapshot()
+                    if self.snapshots_disabled and self.revisions:
+                        await self._remove_revisions(self.revisions)
+                        if not self.snapshots_disabled:
+                            await self._snapshot()
             else:
                 await self._reset()
         finally:
@@ -685,7 +688,8 @@ class ThinVolume(qubes.storage.Volume):
         changed = True
         try:
             if self.save_on_stop:
-                changed = await self._commit()
+                if not self.snapshots_disabled:
+                    changed = await self._commit()
             elif self.snap_on_start:
                 changed = await self._remove_if_exists(self._vid_snap)
             else:
@@ -721,8 +725,9 @@ class ThinVolume(qubes.storage.Volume):
             the libvirt XML template as <disk>.
         '''
         if self.snap_on_start or self.save_on_stop:
+            vid = self.vid if self.snapshots_disabled else self._vid_snap
             snap_path = ('/dev/mapper/' +
-                         self._vid_snap.replace('-', '--').replace('/', '-'))
+                         vid.replace('-', '--').replace('/', '-'))
             return qubes.storage.BlockDevice(
                 snap_path, self.name, None,
                 self.rw, self.domain, self.devtype)
