@@ -443,7 +443,8 @@ class QubesAdminAPI(qubes.api.AbstractQubesAPI):
         self.fire_event_for_permission(src_volume=src_volume,
             dst_volume=dst_volume)
         self.dest.volumes[self.arg] = await qubes.utils.coro_maybe(
-            dst_volume.import_volume(src_volume))
+            self.dest.storage.import_volume(dst_volume, src_volume)
+        )
         self.app.save()
 
     @qubes.api.method('admin.vm.volume.Resize',
