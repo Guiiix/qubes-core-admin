@@ -357,13 +357,18 @@ class TC_10_ReflinkPool(qubes.tests.QubesTestCase):
         self.assertEqual(volume.pool, self.pool.name)
         volume._copy_file = unittest.mock.Mock()
         self.loop.run_until_complete(volume.create())
+        self.loop.run_until_complete(volume.start())
         self.assertEqual(volume.block_device().path,
-                         "/var/tmp/test-reflink-units-on-btrfs/appvms/test-inst-appvm/private.img")
-        self.assertFalse(os.path.exists(volume._path_dirty))
+                         "/var/tmp/test-reflink-units-on-btrfs/appvms/test-inst-appvm/private-dirty.img")
+        self.assertFalse(os.path.exists(volume._path_clean))
         self.assertFalse(os.path.exists(volume._path_precache))
         self.loop.run_until_complete(volume.stop())
+        self.assertFalse(os.path.exists(volume._path_dirty))
+        self.assertTrue(os.path.exists(volume._path_clean))
+        self.assertFalse(os.path.exists(volume._path_precache))
         self.loop.run_until_complete(volume.remove())
         volume._copy_file.assert_not_called()
+
 
 def setup_loopdev(img, cleanup_via=None):
     dev = str.strip(cmd('sudo', 'losetup', '-f', '--show', img).decode())
