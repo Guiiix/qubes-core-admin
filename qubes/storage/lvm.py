@@ -674,8 +674,8 @@ class ThinVolume(qubes.storage.Volume):
                 if not self.save_on_stop or not self.is_dirty():
                     if self.snapshots_disabled and self.revisions:
                         await self._remove_revisions(self.revisions)
-                        if not self.snapshots_disabled:
-                            await self._snapshot()
+                    if not self.snapshots_disabled:
+                        await self._snapshot()
             else:
                 await self._reset()
         finally:
